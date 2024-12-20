@@ -2,7 +2,7 @@ import { prisma } from '../services/prisma.js';
 
 export const createTask = async (req, res) => {
   try {
-    const { title, description, type, priority, boardId, columnId } = req.body;
+    const { title, description, type, priority, boardId, columnId, assigneeId, projectId } = req.body;
 
     // First, verify board and column exist and user has access
     const board = await prisma.board.findFirst({
@@ -11,7 +11,7 @@ export const createTask = async (req, res) => {
         project: {
           OR: [
             { ownerId: req.user.id },
-            { members: { some: { id: req.user.id } } }
+            { members: { some: { userId: req.user.id } } }
           ]
         }
       },
@@ -63,19 +63,27 @@ export const createTask = async (req, res) => {
       data: {
         title,
         description,
-        type,
-        priority,
+        type: type?.toUpperCase(),
+        priority: priority?.toUpperCase(),
         number: taskNumber,
         order,
         board: {
           connect: { id: boardId }
+        },
+        project: {
+          connect: { id: projectId }
         },
         column: {
           connect: { id: columnId }
         },
         creator: {
           connect: { id: req.user.id }
-        }
+        },
+        ...(assigneeId && {
+          assignee: {
+            connect: { id: assigneeId }
+          }
+        })
       },
       include: {
         assignee: {
@@ -90,7 +98,8 @@ export const createTask = async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            avatar: true
           }
         }
       }
@@ -98,74 +107,97 @@ export const createTask = async (req, res) => {
 
     res.status(201).json(task);
   } catch (error) {
-    console.error('Task creation error:', error);
-    res.status(400);
-    throw new Error(error.message || 'Error creating task');
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(400);
+    }
+    throw error;
   }
 };
 
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const {
+      title,
+      description,
+      priority,
+      columnId,
+      estimatedTime,
+      assigneeId,
+      designerId,
+      testerId,
+      order
+    } = req.body;
 
     // Verify task exists and user has access
-    const existingTask = await prisma.task.findFirst({
+    const task = await prisma.task.findFirst({
       where: {
         id,
         board: {
           project: {
             OR: [
               { ownerId: req.user.id },
-              { members: { some: { id: req.user.id } } }
+              { members: { some: { userId: req.user.id } } }
             ]
           }
         }
+      },
+      include: {
+        timeEntries: true
       }
     });
 
-    if (!existingTask) {
+    if (!task) {
       res.status(404);
       throw new Error('Task not found or access denied');
     }
 
-    // If changing column, handle reordering
-    if (updateData.columnId) {
-      // Get current tasks in the target column
-      const tasksInColumn = await prisma.task.findMany({
-        where: { 
-          columnId: updateData.columnId,
-          id: { not: id } // Exclude the current task
-        },
-        orderBy: { order: 'asc' }
-      });
+    // Calculate total time spent from time entries in hours
+    const totalHours = task.timeEntries.reduce((total, entry) => total + entry.timeSpent / 60, 0);
 
-      // Calculate new order
-      const order = typeof updateData.order === 'number' 
-        ? updateData.order 
-        : tasksInColumn.length;
-
-      // Reorder tasks in the column
-      await prisma.$transaction(
-        tasksInColumn
-          .filter(task => task.order >= order)
-          .map(task => 
-            prisma.task.update({
-              where: { id: task.id },
-              data: { order: task.order + 1 }
-            })
-          )
-      );
-
-      updateData.order = order;
-    }
+    // Prepare update data with proper enum values
+    const updateData = {
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(priority !== undefined && { priority: priority.toUpperCase() }),
+      ...(columnId !== undefined && { columnId }),
+      ...(estimatedTime !== undefined && { estimatedTime: Number(estimatedTime) }),
+      timeSpent: Math.round(totalHours * 100) / 100, // Round to 2 decimal places
+      ...(order !== undefined && { order }),
+      ...(assigneeId !== undefined && {
+        assignee: assigneeId ? { connect: { id: assigneeId } } : { disconnect: true }
+      }),
+      ...(designerId !== undefined && {
+        designer: designerId ? { connect: { id: designerId } } : { disconnect: true }
+      }),
+      ...(testerId !== undefined && {
+        tester: testerId ? { connect: { id: testerId } } : { disconnect: true }
+      })
+    };
 
     // Update the task
-    const task = await prisma.task.update({
+    const updatedTask = await prisma.task.update({
       where: { id },
       data: updateData,
       include: {
+        timeEntries: true,
         assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true
+          }
+        },
+        designer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true
+          }
+        },
+        tester: {
           select: {
             id: true,
             name: true,
@@ -177,13 +209,14 @@ export const updateTask = async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            avatar: true
           }
         }
       }
     });
 
-    res.json(task);
+    res.json(updatedTask);
   } catch (error) {
     console.error('Task update error:', error);
     res.status(400);
@@ -232,12 +265,31 @@ export const deleteTask = async (req, res) => {
     const task = await prisma.task.findFirst({
       where: {
         id,
+        OR: [
+          {
+            board: {
+              project: {
+                ownerId: req.user.id
+              }
+            }
+          },
+          {
+            board: {
+              project: {
+                members: {
+                  some: {
+                    id: req.user.id
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      include: {
         board: {
-          project: {
-            OR: [
-              { ownerId: req.user.id },
-              { members: { some: { id: req.user.id } } }
-            ]
+          include: {
+            project: true
           }
         }
       }

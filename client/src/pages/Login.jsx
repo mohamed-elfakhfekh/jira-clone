@@ -1,19 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+      navigate('/');
+    }
+  }, [user, isAuthLoading, navigate]);
 
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
+      // Login
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, data);
-      localStorage.setItem('jiraCloneToken', response.data.token);
+      localStorage.setItem('yajouraToken', response.data.token);
+      
+      // Redirect to dashboard
       navigate('/');
       toast.success('Login successful!');
     } catch (error) {
@@ -23,6 +34,20 @@ export default function Login() {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, this will redirect (handled by useEffect)
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -30,10 +55,10 @@ export default function Login() {
           <img
             className="mx-auto h-12 w-auto"
             src="/logo.svg"
-            alt="Jira Clone"
+            alt="Yajoura"
           />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Sign in to Yajoura
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}

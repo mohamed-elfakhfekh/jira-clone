@@ -55,12 +55,12 @@ export default function TimeSheets() {
     if (!timeEntries) return 0;
     return timeEntries
       .filter(entry => format(new Date(entry.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
-      .reduce((sum, entry) => sum + entry.timeSpent, 0);
+      .reduce((sum, entry) => sum + entry.timeSpent.total, 0);
   };
 
   const getWeekTotal = () => {
     if (!timeEntries) return 0;
-    return timeEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
+    return timeEntries.reduce((sum, entry) => sum + entry.timeSpent.total, 0);
   };
 
   return (
@@ -123,12 +123,31 @@ export default function TimeSheets() {
                     Loading time entries...
                   </div>
                 ) : timeEntries?.length > 0 ? (
-                  timeEntries.map((entry) => (
+                  Object.values(
+                    timeEntries.reduce((acc, entry) => {
+                      const taskId = entry.task.id;
+                      if (!acc[taskId]) {
+                        acc[taskId] = {
+                          taskId,
+                          task: entry.task,
+                          entries: {},
+                          totalTime: 0
+                        };
+                      }
+                      const dateKey = format(new Date(entry.date), 'yyyy-MM-dd');
+                      if (!acc[taskId].entries[dateKey]) {
+                        acc[taskId].entries[dateKey] = [];
+                      }
+                      acc[taskId].entries[dateKey].push(entry);
+                      acc[taskId].totalTime += entry.timeSpent.total;
+                      return acc;
+                    }, {})
+                  ).map((groupedEntry) => (
                     <TimeEntryRow
-                      key={entry.id}
-                      entry={entry}
+                      key={groupedEntry.taskId}
+                      groupedEntry={groupedEntry}
                       days={days}
-                      onDelete={() => deleteTimeEntryMutation.mutate(entry.id)}
+                      onDelete={deleteTimeEntryMutation.mutate}
                     />
                   ))
                 ) : (
@@ -142,13 +161,25 @@ export default function TimeSheets() {
               <div className="bg-gray-50">
                 <div className="grid grid-cols-9 gap-2 px-6 py-3 text-sm font-medium text-gray-900">
                   <div className="col-span-3">Daily Total</div>
-                  {days.map((day) => (
-                    <div key={day.toString()} className="text-center">
-                      {getDayTotal(day) / 60}h
-                    </div>
-                  ))}
+                  {days.map((day) => {
+                    const totalMinutes = getDayTotal(day);
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    return (
+                      <div key={day.toString()} className="text-center">
+                        {hours > 0 && `${hours}h`} {minutes > 0 && `${minutes}m`}
+                      </div>
+                    );
+                  })}
                   <div className="text-center font-bold">
-                    {getWeekTotal() / 60}h
+                    {(() => {
+                      const totalMinutes = getWeekTotal();
+                      const hours = Math.floor(totalMinutes / 60);
+                      const minutes = totalMinutes % 60;
+                      return (
+                        <>{hours > 0 && `${hours}h`} {minutes > 0 && `${minutes}m`}</>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

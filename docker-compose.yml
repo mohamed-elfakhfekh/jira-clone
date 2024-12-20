@@ -32,9 +32,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "
-      npx prisma migrate reset --force &&
-      npm run dev
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        npx prisma migrate deploy &&
+        npm run dev
       "
 
   db:
@@ -44,9 +47,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=jira_clone
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=jira_clone
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

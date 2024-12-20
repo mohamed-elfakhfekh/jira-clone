@@ -23,7 +23,7 @@ export default function Layout() {
   const navigate = useNavigate();
 
   const logout = () => {
-    localStorage.removeItem('jiraCloneToken');
+    localStorage.removeItem('yajouraToken');
     navigate('/login');
   };
 
@@ -186,8 +186,8 @@ export default function Layout() {
             </div>
           </div>
 
-          <main className="py-10">
-            <div className="px-4 sm:px-6 lg:px-8">
+          <main className="py-10 h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="h-full overflow-y-auto">
               <Outlet />
             </div>
           </main>

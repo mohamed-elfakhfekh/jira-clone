@@ -1,33 +1,52 @@
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
 
-export default function Column({ column }) {
+export default function Column({ column = {}, tasks = [], projectId }) {
+  if (!column || !column.id) {
+    console.error('Column is missing required data:', column);
+    return null;
+  }
+
+  const columnName = column.name || 'Untitled';
+
   return (
-    <div className="flex flex-col bg-gray-100 rounded-lg h-full">
-      <div className="p-2 flex justify-between items-center">
-        <h3 className="text-sm font-medium text-gray-900 py-1 px-2">
-          {column.name}
+    <div 
+      className="flex flex-col w-72 bg-gray-100 rounded-lg h-full"
+      data-testid={`column-${columnName.toLowerCase().replace(' ', '-')}`}
+      role="region"
+      aria-label={`${columnName} column`}
+    >
+      {/* Column header */}
+      <div className="p-2 font-medium text-gray-700">
+        <h3 
+          className="text-sm font-medium text-gray-900 py-1 px-2"
+          data-testid={`column-title-${columnName.toLowerCase().replace(' ', '-')}`}
+        >
+          {columnName} ({tasks.length})
         </h3>
-        <span className="text-xs font-medium text-gray-500 bg-gray-200 py-1 px-2 rounded-full">
-          {column.tasks?.length || 0}
-        </span>
       </div>
-      
-      <Droppable droppableId={column.id}>
+
+      {/* Column content */}
+      <Droppable droppableId={column.id} type="TASK">
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 p-2 overflow-y-auto ${
+            className={`flex-1 p-2 space-y-2 min-h-[200px] ${
               snapshot.isDraggingOver ? 'bg-gray-200' : ''
             }`}
+            data-testid={`column-droppable-${columnName.toLowerCase().replace(' ', '-')}`}
           >
-            <div className="space-y-2">
-              {column.tasks?.map((task, index) => (
-                <TaskCard key={task.id} task={task} index={index} />
-              ))}
-              {provided.placeholder}
-            </div>
+            {tasks.map((task, index) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                index={index}
+                columnId={column.id}
+                projectId={projectId}
+              />
+            ))}
+            {provided.placeholder}
           </div>
         )}
       </Droppable>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
+    "@hello-pangea/dnd": "^17.0.0",
     "@heroicons/react": "^2.0.18",
     "@tanstack/react-query": "^4.36.1",
     "@tanstack/react-query-devtools": "^4.36.1",
@@ -18,8 +19,8 @@
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
     "jwt-decode": "^4.0.0",
+    "lodash.debounce": "^4.0.8",
     "react": "^18.2.0",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",

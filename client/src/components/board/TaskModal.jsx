@@ -25,7 +25,7 @@ export default function TaskModal({ task, onClose, projectId }) {
         data,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('jiraCloneToken')}`,
+            Authorization: `Bearer ${localStorage.getItem('yajouraToken')}`,
           },
         }
       );

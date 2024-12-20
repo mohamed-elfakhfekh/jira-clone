@@ -57,7 +57,7 @@ export async function seedDemoData() {
 
     console.log('Created board:', board.id);
 
-    // Create columns
+    // Create columns with new order
     const todoColumn = await prisma.column.create({
       data: {
         name: 'To Do',
@@ -78,10 +78,30 @@ export async function seedDemoData() {
       }
     });
 
+    const inReviewColumn = await prisma.column.create({
+      data: {
+        name: 'In Review',
+        order: 2,
+        board: {
+          connect: { id: board.id }
+        }
+      }
+    });
+
+    const testingColumn = await prisma.column.create({
+      data: {
+        name: 'Testing',
+        order: 3,
+        board: {
+          connect: { id: board.id }
+        }
+      }
+    });
+
     const doneColumn = await prisma.column.create({
       data: {
         name: 'Done',
-        order: 2,
+        order: 4,
         board: {
           connect: { id: board.id }
         }
@@ -99,11 +119,17 @@ export async function seedDemoData() {
         priority: 'HIGH',
         number: 'DEMO-1',
         order: 0,
+        project: {
+          connect: { id: project.id }
+        },
         board: {
           connect: { id: board.id }
         },
         column: {
           connect: { id: todoColumn.id }
+        },
+        assignee: {
+          connect: { id: demoUser.id }
         },
         creator: {
           connect: { id: demoUser.id }
@@ -113,42 +139,25 @@ export async function seedDemoData() {
 
     await prisma.task.create({
       data: {
-        title: 'Design dashboard layout',
-        description: 'Create wireframes for the main dashboard',
+        title: 'Design database schema',
+        description: 'Create and document the database structure',
         type: 'STORY',
         priority: 'MEDIUM',
         number: 'DEMO-2',
         order: 1,
-        board: {
-          connect: { id: board.id }
+        project: {
+          connect: { id: project.id }
         },
-        column: {
-          connect: { id: todoColumn.id }
-        },
-        creator: {
-          connect: { id: demoUser.id }
-        }
-      }
-    });
-
-    await prisma.task.create({
-      data: {
-        title: 'Fix navigation bug',
-        description: 'Menu items not highlighting correctly',
-        type: 'BUG',
-        priority: 'HIGH',
-        number: 'DEMO-3',
-        order: 0,
         board: {
           connect: { id: board.id }
         },
         column: {
           connect: { id: inProgressColumn.id }
         },
-        creator: {
+        assignee: {
           connect: { id: demoUser.id }
         },
-        assignee: {
+        creator: {
           connect: { id: demoUser.id }
         }
       }
@@ -156,22 +165,77 @@ export async function seedDemoData() {
 
     await prisma.task.create({
       data: {
-        title: 'Project setup',
-        description: 'Initial repository setup and configuration',
+        title: 'Set up CI/CD pipeline',
+        description: 'Configure automated testing and deployment',
+        type: 'TASK',
+        priority: 'HIGH',
+        number: 'DEMO-3',
+        order: 0,
+        project: {
+          connect: { id: project.id }
+        },
+        board: {
+          connect: { id: board.id }
+        },
+        column: {
+          connect: { id: inProgressColumn.id }
+        },
+        assignee: {
+          connect: { id: demoUser.id }
+        },
+        creator: {
+          connect: { id: demoUser.id }
+        }
+      }
+    });
+
+    await prisma.task.create({
+      data: {
+        title: 'Write API documentation',
+        description: 'Document all API endpoints and their usage',
         type: 'TASK',
         priority: 'LOW',
         number: 'DEMO-4',
         order: 0,
+        project: {
+          connect: { id: project.id }
+        },
+        board: {
+          connect: { id: board.id }
+        },
+        column: {
+          connect: { id: inReviewColumn.id }
+        },
+        assignee: {
+          connect: { id: demoUser.id }
+        },
+        creator: {
+          connect: { id: demoUser.id }
+        }
+      }
+    });
+
+    await prisma.task.create({
+      data: {
+        title: 'Implement error handling',
+        description: 'Add proper error handling and logging',
+        type: 'STORY',
+        priority: 'MEDIUM',
+        number: 'DEMO-5',
+        order: 1,
+        project: {
+          connect: { id: project.id }
+        },
         board: {
           connect: { id: board.id }
         },
         column: {
           connect: { id: doneColumn.id }
         },
-        creator: {
+        assignee: {
           connect: { id: demoUser.id }
         },
-        assignee: {
+        creator: {
           connect: { id: demoUser.id }
         }
       }
@@ -182,7 +246,6 @@ export async function seedDemoData() {
     
   } catch (error) {
     console.error('Error seeding demo data:', error);
-    // Log the full error for debugging
     console.error(error);
   }
 }

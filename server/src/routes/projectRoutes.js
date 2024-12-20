@@ -7,6 +7,8 @@ import {
   updateProject,
   addProjectMember,
   removeProjectMember,
+  getProjectBoard,
+  getProjectKPIs
 } from '../controllers/projectController.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { body } from 'express-validator';
@@ -47,6 +49,12 @@ router
     updateProject
   );
 
+// Board routes
+router.get('/:id/board', getProjectBoard);
+
+// KPI routes
+router.get('/:id/kpis', getProjectKPIs);
+
 router.post(
   '/:id/members',
   [body('userId').trim().notEmpty().withMessage('User ID is required')],
@@ -55,5 +63,16 @@ router.post(
 );
 
 router.delete('/:id/members/:userId', removeProjectMember);
+
+// Test route
+router.get('/test/columns', async (req, res) => {
+  const columns = await prisma.column.findMany({
+    include: {
+      board: true
+    }
+  });
+  console.log('All columns:', columns);
+  res.json(columns);
+});
 
 export default router;

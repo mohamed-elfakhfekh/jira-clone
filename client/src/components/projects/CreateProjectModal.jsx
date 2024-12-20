@@ -79,26 +79,25 @@ export default function CreateProjectModal({ open, onClose }) {
                     </Dialog.Title>
                     
                     <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-                      <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                          Project Name
-                        </label>
-                        <input
-                          type="text"
-                          {...register('name', { required: 'Project name is required' })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          placeholder="My Awesome Project"
-                        />
-                        {errors.name && (
-                          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                        )}
-                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            Project Name *
+                          </label>
+                          <input
+                            type="text"
+                            {...register('name', { required: 'Project name is required' })}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                          />
+                          {errors.name && (
+                            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                          )}
+                        </div>
 
-                      <div>
-                        <label htmlFor="key" className="block text-sm font-medium text-gray-700">
-                          Project Key
-                        </label>
-                        <div className="mt-1 flex rounded-md shadow-sm">
+                        <div>
+                          <label htmlFor="key" className="block text-sm font-medium text-gray-700">
+                            Project Key *
+                          </label>
                           <input
                             type="text"
                             {...register('key', {
@@ -112,29 +111,51 @@ export default function CreateProjectModal({ open, onClose }) {
                                 message: 'Project key must be 10 characters or less'
                               }
                             })}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                            placeholder="PROJ"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                          />
+                          {errors.key ? (
+                            <p className="mt-1 text-sm text-red-600">{errors.key.message}</p>
+                          ) : (
+                            <p className="mt-1 text-sm text-gray-500">
+                              This will be used as the prefix for all issues in this project (e.g., {projectKey}-123)
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                            Description
+                          </label>
+                          <textarea
+                            {...register('description')}
+                            rows={3}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                           />
                         </div>
-                        {errors.key ? (
-                          <p className="mt-1 text-sm text-red-600">{errors.key.message}</p>
-                        ) : (
-                          <p className="mt-1 text-sm text-gray-500">
-                            This will be used as the prefix for all issues in this project (e.g., {projectKey}-123)
-                          </p>
-                        )}
-                      </div>
 
-                      <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                          Description
-                        </label>
-                        <textarea
-                          {...register('description')}
-                          rows={3}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          placeholder="What is this project about?"
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
+                              Start Date
+                            </label>
+                            <input
+                              type="date"
+                              {...register('startDate')}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
+                              End Date
+                            </label>
+                            <input
+                              type="date"
+                              {...register('endDate')}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">

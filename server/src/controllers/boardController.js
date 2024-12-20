@@ -59,6 +59,12 @@ export const getBoardByProjectId = async (req, res) => {
                     name: true,
                     email: true
                   }
+                },
+                column: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
                 }
               }
             }
@@ -67,70 +73,15 @@ export const getBoardByProjectId = async (req, res) => {
       }
     });
 
-    console.log('Found board:', board);
-
     if (!board) {
-      // If no board exists, create one automatically
-      const newBoard = await prisma.board.create({
-        data: {
-          name: 'Default Board',
-          projectId: project.id,
-          columns: {
-            create: [
-              { name: 'To Do', order: 0 },
-              { name: 'In Progress', order: 1 },
-              { name: 'Done', order: 2 }
-            ]
-          }
-        },
-        include: {
-          project: {
-            select: {
-              id: true,
-              name: true,
-              key: true,
-            }
-          },
-          columns: {
-            orderBy: {
-              order: 'asc'
-            },
-            include: {
-              tasks: {
-                orderBy: {
-                  order: 'asc'
-                },
-                include: {
-                  assignee: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true,
-                      avatar: true
-                    }
-                  },
-                  creator: {
-                    select: {
-                      id: true,
-                      name: true,
-                      email: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      console.log('Created new board:', newBoard);
-      return res.json(newBoard);
+      res.status(404);
+      throw new Error('Board not found');
     }
 
     res.json(board);
   } catch (error) {
     console.error('Error fetching board:', error);
-    res.status(error.statusCode || 500);
+    res.status(400);
     throw new Error(error.message || 'Error fetching board');
   }
 };
@@ -155,12 +106,11 @@ export const createBoard = async (req, res) => {
       throw new Error('Project not found or access denied');
     }
 
+    // Create board with default columns
     const board = await prisma.board.create({
       data: {
-        name,
-        project: {
-          connect: { id: projectId }
-        },
+        name: name || 'Default Board',
+        projectId,
         columns: {
           create: [
             { name: 'To Do', order: 0 },
@@ -170,9 +120,12 @@ export const createBoard = async (req, res) => {
         }
       },
       include: {
-        columns: {
-          orderBy: {
-            order: 'asc'
+        columns: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            key: true
           }
         }
       }
@@ -270,5 +223,33 @@ export const updateColumnOrder = async (req, res) => {
     console.error('Error updating column order:', error);
     res.status(400);
     throw new Error(error.message || 'Error updating column order');
+  }
+};
+
+export const getBoardColumns = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+
+    const board = await prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        columns: {
+          orderBy: {
+            order: 'asc'
+          }
+        }
+      }
+    });
+
+    if (!board) {
+      res.status(404);
+      throw new Error('Board not found');
+    }
+
+    res.json(board.columns);
+  } catch (error) {
+    console.error('Error fetching board columns:', error);
+    res.status(400);
+    throw new Error(error.message || 'Error fetching board columns');
   }
 };

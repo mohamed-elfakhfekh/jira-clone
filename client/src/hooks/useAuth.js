@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
 const fetchUser = async () => {
-  const token = localStorage.getItem('jiraCloneToken');
+  const token = localStorage.getItem('yajouraToken');
   
   if (!token) {
     return null;
@@ -16,7 +16,7 @@ const fetchUser = async () => {
     });
     return data;
   } catch (error) {
-    localStorage.removeItem('jiraCloneToken');
+    localStorage.removeItem('yajouraToken');
     return null;
   }
 };

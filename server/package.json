@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "prisma": {
-    "seed": "node src/services/seedData.js"
+    "seed": "node prisma/seed.js"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -16,7 +16,7 @@
     "seed": "prisma db seed"
   },
   "dependencies": {
-    "@prisma/client": "^5.6.0",
+    "@prisma/client": "^6.1.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -30,7 +30,7 @@
     "@vitest/coverage-v8": "^1.0.4",
     "eslint": "^8.54.0",
     "nodemon": "^3.0.1",
-    "prisma": "^5.6.0",
+    "prisma": "^6.1.0",
     "supertest": "^6.3.3",
     "vitest": "^1.0.4"
   }

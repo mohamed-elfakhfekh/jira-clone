@@ -1,163 +1,150 @@
-# Jira Clone
+# Yajoura - Project Management Tool
 
-A full-featured project management application inspired by Jira, built with modern JavaScript stack.
+Yajoura is a modern, full-featured project management application built with React and Node.js. It provides teams with powerful tools for task management, collaboration, and project tracking.
 
 ## Features
 
-- 🔐 User Authentication & Authorization
-- 📋 Project & Board Management
-- 🎯 Task/Issue Tracking with Drag & Drop
-- ⏱️ Time Tracking & Reporting
-- 👥 Team Collaboration
-- 📊 Dashboards & Analytics
-- 🔄 Real-time Updates
-- 📱 Responsive Design
+- **Project Management**
+  - Create and manage multiple projects
+  - Customize project settings and access controls
+  - Track project progress and milestones
+
+- **Task Management**
+  - Drag-and-drop Kanban board interface
+  - Create, edit, and organize tasks
+  - Set task priorities and deadlines
+  - Assign tasks to team members
+  - Real-time task updates
+
+- **Time Tracking**
+  - Log time spent on tasks
+  - View time reports by project or user
+  - Weekly timesheet view
+  - Track project time budgets
+
+- **Team Collaboration**
+  - Add team members to projects
+  - Real-time updates and notifications
+  - Comment and discuss tasks
+  - Share files and attachments
 
 ## Tech Stack
 
 ### Frontend
-- React (with Vite)
-- Tailwind CSS for styling
-- React Query for state management
+- React 18
 - React Router for navigation
-- React DnD for drag and drop
-- React Hook Form for forms
+- React Query for state management
+- Tailwind CSS for styling
+- Headless UI for accessible components
+- Axios for API communication
 
 ### Backend
-- Node.js with Express
-- PostgreSQL with Prisma ORM
-- JWT for authentication
-- Express Validator for input validation
+- Node.js
+- Express.js
+- Prisma ORM
+- PostgreSQL database
+- JWT authentication
+- RESTful API architecture
 
-### DevOps
-- Docker & Docker Compose
-- ESLint & Prettier for code formatting
-
-## Quick Start
+## Getting Started
 
 ### Prerequisites
-- Docker and Docker Compose
-- Node.js v18+ (for local development)
+- Node.js (v16 or higher)
+- PostgreSQL (v13 or higher)
+- npm or yarn package manager
 
-### Using Docker (Recommended)
+### Installation
+
 1. Clone the repository:
-\`\`\`bash
-git clone https://github.com/mohamed-elfakhfekh/jira-clone.git
-cd jira-clone
-\`\`\`
+```bash
+git clone https://github.com/yourusername/yajoura.git
+cd yajoura
+```
 
-2. Start the application:
-\`\`\`bash
-docker-compose up --build
-\`\`\`
-
-3. Access the application:
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000
-- Database: localhost:5432
-
-### Demo Account
-\`\`\`
-Email: demo@example.com
-Password: demo123
-\`\`\`
-
-### Manual Setup
-
-1. Frontend Setup:
-\`\`\`bash
-cd client
-npm install
-npm run dev
-\`\`\`
-
-2. Backend Setup:
-\`\`\`bash
+2. Install dependencies:
+```bash
+# Install backend dependencies
 cd server
 npm install
+
+# Install frontend dependencies
+cd ../client
+npm install
+```
+
+3. Set up environment variables:
+```bash
+# In server directory
+cp .env.example .env
+# Update .env with your database credentials and JWT secret
+
+# In client directory
+cp .env.example .env
+# Update .env with your API URL
+```
+
+4. Set up the database:
+```bash
+cd server
+npx prisma migrate dev
+```
+
+5. Start the development servers:
+```bash
+# Start backend server (from server directory)
 npm run dev
-\`\`\`
 
-3. Database Setup:
-- Install PostgreSQL
-- Create database 'jira_clone'
-- Update .env file with your database credentials
-- Run migrations: \`npm run prisma:migrate\`
+# Start frontend server (from client directory)
+npm run dev
+```
 
-## Project Structure
-\`\`\`
-.
-├── client/                 # Frontend application
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3000
+
+## Development
+
+### Project Structure
+```
+yajoura/
+├── client/               # Frontend React application
 │   ├── src/
-│   │   ├── components/    # Reusable components
-│   │   ├── pages/        # Page components
-│   │   ├── hooks/        # Custom hooks
-│   │   └── services/     # API services
-│   └── package.json
-├── server/                # Backend application
-│   ├── src/
-│   │   ├── controllers/  # Route controllers
-│   │   ├── middleware/   # Express middleware
-│   │   ├── routes/      # API routes
-│   │   └── services/    # Business logic
-│   ├── prisma/          # Database schema and migrations
-│   └── package.json
-├── docker-compose.yml    # Docker compose configuration
-└── README.md            # Project documentation
-\`\`\`
+│   │   ├── components/  # Reusable React components
+│   │   ├── pages/       # Page components
+│   │   ├── services/    # API and other services
+│   │   └── hooks/       # Custom React hooks
+│   └── public/          # Static assets
+└── server/              # Backend Node.js application
+    ├── src/
+    │   ├── controllers/ # Route controllers
+    │   ├── middleware/  # Express middleware
+    │   ├── services/    # Business logic
+    │   └── routes/      # API routes
+    └── prisma/          # Database schema and migrations
+```
 
-## Environment Variables
+### API Documentation
 
-### Backend (.env)
-\`\`\`
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://postgres:postgres@db:5432/jira_clone
-JWT_SECRET=your-super-secret-key-change-in-production
-\`\`\`
+The API documentation is available at `/api-docs` when running the server in development mode.
 
-### Frontend (.env)
-\`\`\`
-VITE_API_URL=http://localhost:3000/api
-\`\`\`
-
-## API Documentation
-
-### Authentication
-- POST /api/auth/register - Register new user
-- POST /api/auth/login - Login user
-- GET /api/auth/me - Get current user
-
-### Projects
-- GET /api/projects - Get all projects
-- POST /api/projects - Create new project
-- GET /api/projects/:id - Get project by ID
-- PATCH /api/projects/:id - Update project
-
-### Boards
-- GET /api/boards/project/:projectId - Get project board
-- PATCH /api/boards/:id - Update board
-- PATCH /api/boards/:boardId/columns/order - Update column order
-
-### Tasks
-- POST /api/tasks - Create new task
-- PATCH /api/tasks/:id - Update task
-- DELETE /api/tasks/:id - Delete task
-
-### Time Entries
-- GET /api/time-entries - Get user's time entries
-- POST /api/time-entries - Create time entry
-- PATCH /api/time-entries/:id - Update time entry
-- DELETE /api/time-entries/:id - Delete time entry
-
-## Contributing
+### Contributing
 
 1. Fork the repository
-2. Create your feature branch (\`git checkout -b feature/amazing-feature\`)
-3. Commit your changes (\`git commit -m 'Add some amazing feature'\`)
-4. Push to the branch (\`git push origin feature/amazing-feature\`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, email support@yajoura.com or open an issue in the GitHub repository.
+
+## Acknowledgments
+
+- Thanks to all contributors who have helped shape Yajoura
+- Built with modern web technologies and best practices
+- Inspired by popular project management tools while adding unique features# yajoura-solution

@@ -1,19 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, watch } = useForm();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+      navigate('/');
+    }
+  }, [user, isAuthLoading, navigate]);
 
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, data);
-      localStorage.setItem('jiraCloneToken', response.data.token);
+      // Register
+      await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, data);
+      
+      // Login after successful registration
+      const loginResponse = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        email: data.email,
+        password: data.password
+      });
+      
+      localStorage.setItem('yajouraToken', loginResponse.data.token);
+      
+      // Redirect to dashboard
       navigate('/');
       toast.success('Registration successful!');
     } catch (error) {
@@ -23,6 +41,20 @@ export default function Register() {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, this will redirect (handled by useEffect)
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -30,7 +62,7 @@ export default function Register() {
           <img
             className="mx-auto h-12 w-auto"
             src="/logo.svg"
-            alt="Jira Clone"
+            alt="Yajoura"
           />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
@@ -46,13 +78,13 @@ export default function Register() {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="name" className="sr-only">
-                Full Name
+                Full name
               </label>
               <input
-                {...register('name', { required: 'Full name is required' })}
+                {...register('name', { required: 'Name is required' })}
                 type="text"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Full Name"
+                placeholder="Full name"
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -91,11 +123,32 @@ export default function Register() {
                   }
                 })}
                 type="password"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="sr-only">
+                Confirm password
+              </label>
+              <input
+                {...register('confirmPassword', {
+                  required: 'Please confirm your password',
+                  validate: (val) => {
+                    if (watch('password') !== val) {
+                      return 'Passwords do not match';
+                    }
+                  }
+                })}
+                type="password"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm password"
+              />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>

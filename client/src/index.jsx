@@ -7,7 +7,7 @@ import axios from 'axios';
 // Configure axios defaults
 axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jiraCloneToken');
+  const token = localStorage.getItem('yajouraToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

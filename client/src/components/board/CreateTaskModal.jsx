@@ -6,31 +6,37 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const taskTypes = ['TASK', 'BUG', 'STORY', 'EPIC'];
 const priorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+const taskTypes = ['TASK', 'BUG', 'STORY', 'EPIC'];
 
-export default function CreateTaskModal({ open, onClose, projectId, boardId, columns }) {
+export default function CreateTaskModal({ open, setOpen, projectId, columns, board }) {
   const queryClient = useQueryClient();
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      type: 'TASK',
       priority: 'MEDIUM',
+      type: 'TASK',
       columnId: columns[0]?.id,
     },
   });
 
   const createTaskMutation = useMutation({
     mutationFn: async (data) => {
+      const token = localStorage.getItem('yajouraToken');
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/tasks`, {
         ...data,
-        boardId,
+        projectId,
+        boardId: board.id,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['board', projectId]);
       toast.success('Task created successfully');
-      onClose();
+      setOpen(false);
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to create task');
@@ -43,7 +49,7 @@ export default function CreateTaskModal({ open, onClose, projectId, boardId, col
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={setOpen}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -72,7 +78,7 @@ export default function CreateTaskModal({ open, onClose, projectId, boardId, col
                   <button
                     type="button"
                     className="rounded-md bg-white text-gray-400 hover:text-gray-500"
-                    onClick={onClose}
+                    onClick={() => setOpen(false)}
                   >
                     <span className="sr-only">Close</span>
                     <XMarkIcon className="h-6 w-6" aria-hidden="true" />
@@ -163,18 +169,18 @@ export default function CreateTaskModal({ open, onClose, projectId, boardId, col
                         </select>
                       </div>
 
-                      <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                      <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                         <button
                           type="submit"
+                          className="inline-flex w-full justify-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 sm:ml-3 sm:w-auto"
                           disabled={createTaskMutation.isLoading}
-                          className="inline-flex w-full justify-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 sm:col-start-2"
                         >
                           {createTaskMutation.isLoading ? 'Creating...' : 'Create Task'}
                         </button>
                         <button
                           type="button"
-                          className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
-                          onClick={onClose}
+                          className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                          onClick={() => setOpen(false)}
                         >
                           Cancel
                         </button>

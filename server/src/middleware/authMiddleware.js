@@ -2,18 +2,27 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../services/prisma.js';
 
 export const protect = async (req, res, next) => {
-  let token;
+  try {
+    // Check for Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401);
+      throw new Error('Not authorized, no token');
+    }
 
-  if (req.headers.authorization?.startsWith('Bearer')) {
+    // Get token from header
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      res.status(401);
+      throw new Error('Not authorized, invalid token format');
+    }
+
     try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from token
-      req.user = await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: {
           id: true,
@@ -23,16 +32,24 @@ export const protect = async (req, res, next) => {
         },
       });
 
+      if (!user) {
+        res.status(401);
+        throw new Error('Not authorized, user not found');
+      }
+
+      req.user = user;
       next();
     } catch (error) {
       res.status(401);
-      throw new Error('Not authorized');
+      if (error.name === 'JsonWebTokenError') {
+        throw new Error('Not authorized, invalid token');
+      } else if (error.name === 'TokenExpiredError') {
+        throw new Error('Not authorized, token expired');
+      }
+      throw error;
     }
-  }
-
-  if (!token) {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+  } catch (error) {
+    next(error);
   }
 };
 

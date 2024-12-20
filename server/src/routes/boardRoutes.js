@@ -5,6 +5,7 @@ import { body } from 'express-validator';
 import {
   getBoardByProjectId,
   createBoard,
+  getBoardColumns,
   updateBoard,
   updateColumnOrder,
 } from '../controllers/boardController.js';
@@ -34,6 +35,9 @@ router.patch(
   validateRequest,
   updateBoard
 );
+
+// Get board columns
+router.get('/:id/columns', getBoardColumns);
 
 // Update column order
 router.patch(

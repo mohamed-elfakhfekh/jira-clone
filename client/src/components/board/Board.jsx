@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import Column from './Column';
@@ -13,77 +13,30 @@ export default function Board({ board, projectId }) {
 
   const updateTaskPosition = useMutation({
     mutationFn: async ({ taskId, columnId, order }) => {
+      const token = localStorage.getItem('yajouraToken');
       const { data } = await axios.patch(`${import.meta.env.VITE_API_URL}/tasks/${taskId}`, {
         columnId,
         order
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       return data;
     },
     onError: (error) => {
+      console.error('Error updating task position:', error.response?.data || error);
       toast.error('Failed to update task position');
-      // Invalidate to refresh the board
       queryClient.invalidateQueries(['board', projectId]);
     }
   });
 
-  const onDragEnd = async (result) => {
-    const { destination, source, draggableId: taskId } = result;
-
-    if (!destination) return;
-
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    // Optimistically update the UI
-    queryClient.setQueryData(['board', projectId], (oldData) => {
-      if (!oldData) return oldData;
-
-      const newColumns = {...oldData.columns};
-      const sourceColumn = newColumns[source.droppableId];
-      const destColumn = newColumns[destination.droppableId];
-      const task = sourceColumn.tasks.find(t => t.id === taskId);
-
-      if (source.droppableId === destination.droppableId) {
-        // Moving within the same column
-        const newTasks = Array.from(sourceColumn.tasks);
-        newTasks.splice(source.index, 1);
-        newTasks.splice(destination.index, 0, task);
-        newColumns[source.droppableId].tasks = newTasks;
-      } else {
-        // Moving to a different column
-        const sourceTasks = Array.from(sourceColumn.tasks);
-        const destTasks = Array.from(destColumn.tasks);
-        sourceTasks.splice(source.index, 1);
-        destTasks.splice(destination.index, 0, task);
-        newColumns[source.droppableId].tasks = sourceTasks;
-        newColumns[destination.droppableId].tasks = destTasks;
-      }
-
-      return {
-        ...oldData,
-        columns: newColumns
-      };
-    });
-
-    // Make the API call
-    try {
-      await updateTaskPosition.mutateAsync({
-        taskId,
-        columnId: destination.droppableId,
-        order: destination.index
-      });
-    } catch (error) {
-      // Error handling is done in the mutation
-    }
-  };
-
-  if (!board) {
+  if (!board || !board.columns) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div 
+        className="flex items-center justify-center h-full"
+        data-testid="empty-board-state"
+      >
         <div className="text-center">
           <h3 className="mt-2 text-sm font-medium text-gray-900">No board found</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -94,9 +47,67 @@ export default function Board({ board, projectId }) {
     );
   }
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const sourceColumn = board.columns.find(col => col.id === result.source.droppableId);
+    const destColumn = board.columns.find(col => col.id === result.destination.droppableId);
+    
+    if (!sourceColumn || !destColumn) {
+      console.error('Source or destination column not found:', { result, columns: board.columns });
+      return;
+    }
+
+    try {
+      // Get the task being moved
+      const taskToMove = sourceColumn.tasks[result.source.index];
+      
+      // Update task position in the UI optimistically
+      const newBoard = {
+        ...board,
+        columns: board.columns.map(col => {
+          if (col.id === sourceColumn.id) {
+            return {
+              ...col,
+              tasks: col.tasks.filter((_, index) => index !== result.source.index)
+            };
+          }
+          if (col.id === destColumn.id) {
+            const newTasks = [...col.tasks];
+            newTasks.splice(result.destination.index, 0, taskToMove);
+            return {
+              ...col,
+              tasks: newTasks
+            };
+          }
+          return col;
+        })
+      };
+
+      queryClient.setQueryData(['board', projectId], newBoard);
+
+      // Make API call to update task position
+      await updateTaskPosition.mutateAsync({
+        taskId: taskToMove.id, // Already in the correct format from mock data
+        columnId: destColumn.id,
+        order: result.destination.index
+      });
+    } catch (error) {
+      console.error('Error updating task position:', error);
+      toast.error('Failed to update task position');
+      queryClient.invalidateQueries(['board', projectId]);
+    }
+  };
+
   return (
-    <>
-      <div className="px-4 sm:px-6 lg:px-8 pb-4">
+    <div 
+      className="h-full flex flex-col"
+      data-testid="board-container"
+      role="main"
+      aria-label="Project Board"
+    >
+      {/* Header section - no horizontal scroll */}
+      <div className="flex-none px-4 sm:px-6 lg:px-8 pb-4">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <h2 className="text-base font-semibold leading-6 text-gray-900">Tasks</h2>
@@ -109,6 +120,7 @@ export default function Board({ board, projectId }) {
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
               className="block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+              data-testid="create-task-button"
             >
               <PlusIcon className="-ml-0.5 mr-1.5 h-5 w-5 inline-block" aria-hidden="true" />
               Add Task
@@ -117,29 +129,34 @@ export default function Board({ board, projectId }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto">
-        <div className="h-full px-4 sm:px-6 lg:px-8">
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-4 h-full pb-4">
-              {board.columns?.map((column) => (
-                <div key={column.id} className="flex-shrink-0 w-80">
-                  <Column column={column} />
-                </div>
-              ))}
-            </div>
-          </DragDropContext>
-        </div>
+      {/* Board content with horizontal scroll */}
+      <div className="flex-1 min-h-0 overflow-x-auto">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div 
+            className="inline-flex gap-4 h-full p-4"
+            style={{ minWidth: 'min-content' }}
+            data-testid="columns-container"
+          >
+            {board.columns.map((column) => (
+              <div key={column.id} style={{ width: '280px' }} className="flex-none">
+                <Column
+                  column={column}
+                  tasks={column.tasks || []}
+                  projectId={projectId}
+                />
+              </div>
+            ))}
+          </div>
+        </DragDropContext>
       </div>
 
-      {isCreateModalOpen && (
-        <CreateTaskModal
-          open={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          projectId={projectId}
-          boardId={board.id}
-          columns={board.columns}
-        />
-      )}
-    </>
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        setOpen={setIsCreateModalOpen}
+        projectId={projectId}
+        columns={board.columns}
+        board={board}
+      />
+    </div>
   );
 }

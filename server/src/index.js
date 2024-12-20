@@ -1,11 +1,8 @@
 import app from './app.js';
-import { seedDemoData } from './services/seedData.js';
+import { prisma } from './services/prisma.js';
 
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-// Initialize demo data
-seedDemoData().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

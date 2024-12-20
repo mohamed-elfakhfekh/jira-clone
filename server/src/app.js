@@ -9,6 +9,8 @@ import projectRoutes from './routes/projectRoutes.js';
 import boardRoutes from './routes/boardRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import timeEntryRoutes from './routes/timeEntryRoutes.js';
+import kpiRoutes from './routes/kpiRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/time-entries', timeEntryRoutes);
+app.use('/api/kpis', kpiRoutes);
+app.use('/api/users', userRoutes);
 
 // Error Handling
 app.use(errorLogger);
